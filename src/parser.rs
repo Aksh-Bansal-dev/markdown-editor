@@ -1,3 +1,11 @@
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
 struct Parser{
     pos: usize,
     input: String,
@@ -104,12 +112,60 @@ impl Parser{
     }
 
     fn parse_list(&mut self)->String{
-        self.consume_char();
-        self.consume_whitespace();
+        let mut res = String::new();
+        res.push_str("<ul>");
+        loop{
+            let mut dep = 0;
+            while !self.end_of_line() &&
+            (
+                self.next_char()==' ' || 
+                self.next_char()=='\t'
+            )
+            {
+                dep+=1;
+                self.consume_char();
+            }
+            dep/=2;
 
-        let text = self.parse_text();
+            if self.pos<self.input.len()-1 && 
+            self.next_char()=='-' && 
+            (
+                self.input.chars().nth(self.pos+1).unwrap()==' ' ||
+                self.input.chars().nth(self.pos+1).unwrap()=='\t'
+            )
+            {
+                for _ in 0..dep{
+                    res.push_str("<ul>");
+                }
+                self.consume_char();
+                self.consume_whitespace();
 
-        create_html_element("li".to_string(), text)
+                let text = self.parse_text();
+                res.push_str(&create_html_element("li".to_string(), text));
+
+                for _ in 0..dep{
+                    res.push_str("</ul>");
+                }
+            }
+            else{
+                break;
+            }
+
+            if self.next_char()!='\n' || 
+            self.pos>=self.input.len()-1 ||
+            (
+                self.input.chars().nth(self.pos+1).unwrap()!='-' && 
+                self.input.chars().nth(self.pos+1).unwrap()!='\t' && 
+                self.input.chars().nth(self.pos+1).unwrap()!=' '
+            )
+            {
+                break;
+            }
+            self.consume_char(); // \n
+        }
+
+        res.push_str("</ul>");
+        res
     }
 
     fn parse_title(&mut self)->String{
