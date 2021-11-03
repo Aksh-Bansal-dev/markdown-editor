@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>hello-wasm example</title>
+  </head>
+  <body>
+      <h1 class="heading">Markdown Parser</h1>
+      <textarea name="input" id="input"  ></textarea>
+      <div id="output"></div>
+      <script type="module" src="index.js"></script>
+    </script>
+  </body>
+  <style>
+    body, html{
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      height: 100vh;
+    }
+    body{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .heading{
+      font-family: sans-serif;
+    }
+    #input{
+      width: 94vw;
+      height: 50vh;
+      resize: none;
+      padding: 2vh;
+    }
+    #output{
+      margin-top: 5vh;
+      font-family: sans-serif;
+      height: 45vh;
+      width: 80vw;
+    }
+  </style>
+</html>
