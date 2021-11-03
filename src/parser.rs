@@ -24,15 +24,83 @@ impl Parser{
         match self.next_char(){
             '#' => self.parse_title(),
             '-' => {
-                if self.pos<self.input.len()-1 && char::is_whitespace(self.input.chars().nth(self.pos+1).unwrap()){
+                if self.pos<self.input.len()-1 && 
+                    (
+                        self.input.chars().nth(self.pos+1).unwrap()==' ' ||
+                        self.input.chars().nth(self.pos+1).unwrap()=='\t'
+                    )
+                {
                     self.parse_list()
                 }
                 else{
                     self.parse_text()
                 }
             },
+            '\n' => self.parse_newline(),
+            '[' => {
+                if self.pos<self.input.len()-1 && 
+                    self.input.chars().nth(self.pos+1).unwrap()=='!'
+                {
+                    self.parse_image()
+                }
+                else{
+                    self.parse_link()
+                }
+            },
             _ => self.parse_text(),
         }
+    }
+
+    fn parse_image(&mut self) ->String{
+        let initial_pos = self.pos;
+        self.consume_char();
+        self.consume_char();
+        let alt = self.consume_while(|c| c!=']');
+        if self.next_char()!=']' || 
+        self.pos>=self.input.len()-1 ||
+        self.input.chars().nth(self.pos+1).unwrap()!='('
+        {
+            return self.fallback(initial_pos);
+        }
+        self.consume_char();
+        self.consume_char();
+        let src = self.consume_while(|c| c!=')');
+        if self.next_char()!=')'
+        {
+            return self.fallback(initial_pos);
+        }
+
+        self.consume_char();
+        format!("<img src={} alt={}></img>", src, alt)
+    }
+
+    fn parse_link(&mut self) ->String{
+        let initial_pos = self.pos;
+        self.consume_char();
+
+        let text = self.consume_while(|c| c!=']');
+        if self.next_char()!=']' || 
+        self.pos>=self.input.len()-1 ||
+        self.input.chars().nth(self.pos+1).unwrap()!='('
+        {
+            return self.fallback(initial_pos);
+        }
+        self.consume_char();
+        self.consume_char();
+        let href = self.consume_while(|c| c!=')');
+        if self.next_char()!=')'
+        {
+            return self.fallback(initial_pos);
+        }
+
+        self.consume_char();
+        format!("<a href={}>{}</a>", href, text)
+    }
+    fn parse_newline(&mut self)->String{
+        self.consume_while(|c| c=='\n');
+        self.consume_whitespace();
+
+        create_html_element("p".to_string(), "".to_string())
     }
 
     fn parse_list(&mut self)->String{
@@ -40,6 +108,7 @@ impl Parser{
         self.consume_whitespace();
 
         let text = self.parse_text();
+
         create_html_element("li".to_string(), text)
     }
 
@@ -59,8 +128,9 @@ impl Parser{
         self.pos>=self.input.len()
     }
 
-    fn starts_with(&self, s: &str)->bool{
-        self.input[self.pos .. ].starts_with(s)
+    fn fallback(&mut self, initial_pos: usize)->String{
+        self.pos = initial_pos;
+        self.parse_text()
     }
 
     fn next_char(&self)->char {
@@ -91,7 +161,8 @@ impl Parser{
     }
 
     fn consume_whitespace(&mut self){
-        self.consume_while(char::is_whitespace);
+        //self.consume_while(char::is_whitespace);
+        self.consume_while(|c| c==' ' || c=='\t');
     }
 
 }
