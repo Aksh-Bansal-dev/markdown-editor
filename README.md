@@ -1,6 +1,8 @@
 # markdown-editor
 Markdown editor built using Rust WebAssembly.
 
+<https://aksh-bansal-dev.github.io/markdown-editor/>
+
 ## How to use
 - Run `python3 -m http.server`
   > Note: Use any web server supporting wasm.
