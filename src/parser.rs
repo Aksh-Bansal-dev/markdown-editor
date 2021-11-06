@@ -32,7 +32,7 @@ impl Parser{
         match self.next_char(){
             '#' => self.parse_title(),
             '-' => {
-                if self.pos<self.input.len()-1 && 
+                if self.pos+1<self.input.len() && 
                     (
                         self.input.chars().nth(self.pos+1).unwrap()==' ' ||
                         self.input.chars().nth(self.pos+1).unwrap()=='\t'
@@ -41,21 +41,11 @@ impl Parser{
                     self.parse_list()
                 }
                 else{
-                    self.parse_text()
+                    self.parse_text(false)
                 }
             },
             '\n' => self.parse_newline(),
-            '[' => {
-                if self.pos<self.input.len()-1 && 
-                    self.input.chars().nth(self.pos+1).unwrap()=='!'
-                {
-                    self.parse_image()
-                }
-                else{
-                    self.parse_link()
-                }
-            },
-            _ => self.parse_text(),
+            _ => self.parse_text(false),
         }
     }
 
@@ -140,7 +130,7 @@ impl Parser{
                 self.consume_char();
                 self.consume_whitespace();
 
-                let text = self.parse_text();
+                let text = self.parse_text(false);
                 res.push_str(&create_html_element("li".to_string(), text));
 
                 for _ in 0..dep{
@@ -171,13 +161,42 @@ impl Parser{
     fn parse_title(&mut self)->String{
         let hashtag = self.consume_while(|c| c=='#');
         self.consume_whitespace();
-        let text = self.parse_text();
+        let text = self.parse_text(true);
 
         create_html_element(format!("h{}", hashtag.len()), text)
     }
 
-    fn parse_text(&mut self)->String{
-        self.consume_while(|c| !is_newline(c))
+    fn parse_text(&mut self, simple: bool)->String{
+        if simple{
+            return self.consume_while(|c| !is_newline(c));
+        }
+
+        let mut res = String::new();
+        while !self.end_of_line() && !is_newline(self.next_char()){
+            if self.pos+3<self.input.len() && self.next_char()=='['  {
+                if self.input.chars().nth(self.pos+1).unwrap()=='!'
+                {
+                    res.push_str(&self.parse_image());
+                }
+                else if self.input[(self.pos)..(self.pos+4)]=="[ ] ".to_string()
+                {
+                    res.push_str("<input type='checkbox' />");
+                    self.pos+=3;
+                }
+                else if self.input[(self.pos)..(self.pos+4)]=="[x] ".to_string()
+                {
+                    res.push_str("<input type='checkbox' checked='true' />");
+                    self.pos+=3;
+                }
+                else{
+                    res.push_str(&self.parse_link());
+                }
+            }
+            else{
+                res.push(self.consume_char());
+            }
+        }
+        res
     }
 
     fn end_of_line(&self) -> bool{
@@ -186,7 +205,7 @@ impl Parser{
 
     fn fallback(&mut self, initial_pos: usize)->String{
         self.pos = initial_pos;
-        self.parse_text()
+        self.parse_text(true)
     }
 
     fn next_char(&self)->char {
