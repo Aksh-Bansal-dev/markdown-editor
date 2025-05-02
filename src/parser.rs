@@ -87,7 +87,7 @@ impl Parser {
         }
 
         self.consume_char();
-        format!("<a href={}>{}</a>", href, text)
+        format!("<a href=\"{}\">{}</a>", href, text)
     }
     fn parse_newline(&mut self) -> String {
         self.consume_while(|c| c == '\n');
@@ -144,11 +144,31 @@ impl Parser {
     }
 
     fn parse_title(&mut self) -> String {
+        let initial_pos = self.pos;
         let hashtag = self.consume_while(|c| c == '#');
+        if self.next_char() != ' ' {
+            return self.fallback(initial_pos);
+        }
         self.consume_whitespace();
         let text = self.parse_text(true);
 
         create_html_element(format!("h{}", hashtag.len()), text)
+    }
+
+    fn parse_strong(&mut self) -> String {
+        let initial_pos = self.pos;
+        self.consume_char();
+        self.consume_char();
+        let text = self.consume_while(|c| c != '*' && c != '\n');
+        if self.pos + 1 >= self.input.len()
+            || self.input[(self.pos)..(self.pos + 2)] != "**".to_string()
+        {
+            return self.fallback(initial_pos);
+        }
+        self.consume_char();
+        self.consume_char();
+
+        create_html_element("strong".to_string(), text)
     }
 
     fn parse_text(&mut self, simple: bool) -> String {
@@ -170,6 +190,10 @@ impl Parser {
                 } else {
                     res.push_str(&self.parse_link());
                 }
+            } else if self.pos + 4 < self.input.len()
+                && self.input[(self.pos)..(self.pos + 2)] == "**".to_string()
+            {
+                res.push_str(&self.parse_strong())
             } else {
                 res.push(self.consume_char());
             }
