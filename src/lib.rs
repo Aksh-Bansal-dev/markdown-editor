@@ -40,4 +40,16 @@ mod tests {
         let result = parse("- hello [world](example.com)");
         assert_eq!(result, "<ul><li>hello <a href=\"example.com\">world</a></li></ul>");
     }
+
+    #[test]
+    fn it_parses_bold() {
+        let result = parse("hello **world**");
+        assert_eq!(result, "hello <strong>world</strong>");
+    }
+
+    #[test]
+    fn it_parses_invalid_bold() {
+        let result = parse("hello **world*");
+        assert_eq!(result, "hello **world*");
+    }
 }
