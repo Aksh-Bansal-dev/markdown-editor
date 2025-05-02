@@ -87,7 +87,7 @@ impl Parser {
         }
 
         self.consume_char();
-        format!("<a href={}>{}</a>", href, text)
+        format!("<a href=\"{}\">{}</a>", href, text)
     }
     fn parse_newline(&mut self) -> String {
         self.consume_while(|c| c == '\n');
@@ -144,7 +144,11 @@ impl Parser {
     }
 
     fn parse_title(&mut self) -> String {
+        let initial_pos = self.pos;
         let hashtag = self.consume_while(|c| c == '#');
+        if self.next_char() != ' ' {
+            return self.fallback(initial_pos)
+        }
         self.consume_whitespace();
         let text = self.parse_text(true);
 
