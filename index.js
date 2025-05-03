@@ -20,6 +20,25 @@ input.addEventListener("keydown", function (e) {
 
 init().then(() => {
   input.addEventListener("keyup", () => {
-    output.innerHTML = parse(input.value);
+    const a = parse(input.value);
+    const b = "<script>";
+    for (let i = 0; i < a.length; i++) {
+      let j = 0;
+      let ii = i;
+      while (a[ii] == b[j]) {
+        j++;
+        ii++;
+      }
+      if (j === b.length) {
+        output.innerHTML = "Cannot render script tag!";
+        break;
+      }
+    }
+    // const res = parse(input.value);
+    // if (res.indexOf("<script>") > -1) {
+    //   output.innerHTML = "Cannot render script tag!";
+    //   return;
+    // }
+    output.innerHTML = res;
   });
 });
