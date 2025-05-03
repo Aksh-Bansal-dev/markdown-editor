@@ -21,7 +21,21 @@ input.addEventListener("keydown", function (e) {
 init().then(() => {
   input.addEventListener("keyup", () => {
     const renderedHtml = parse(input.value);
-    if (renderedHtml.toLowerCase().includes("<script")) {
+    const dangerousPatterns = [
+      "<script",
+      "javascript:",
+      "data:",
+      "vbscript:",
+      "onerror=",
+      "onload=",
+      "onclick=",
+      "onmouseover=",
+    ];
+    if (
+      dangerousPatterns.some((pattern) =>
+        renderedHtml.toLowerCase().includes(pattern),
+      )
+    ) {
       output.innerHTML = "Cannot render script tag!";
       return;
     }
