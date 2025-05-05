@@ -52,4 +52,28 @@ mod tests {
         let result = parse("hello **world*");
         assert_eq!(result, "hello **world*");
     }
+
+    #[test]
+    fn it_parses_nested_list() {
+        let result = parse("- hello\n  - bye");
+        assert_eq!(result, "<ul><li>hello<ul><li>bye</li></ul></li></ul>");
+    }
+
+    #[test]
+    fn it_parses_invalid_nested_list() {
+        let result = parse("- hello\n - bye");
+        assert_eq!(result, "<ul><li>hello</li><li>bye</li></ul>");
+    }
+
+    #[test]
+    fn it_parses_nested_list_2() {
+        let result = parse("- hello\n  - bye\n- go");
+        assert_eq!(result, "<ul><li>hello<ul><li>bye</li></ul></li><li>go</li></ul>");
+    }
+
+    #[test]
+    fn it_parses_nested_list_with_incomplete_list() {
+        let result = parse("- hello\n  -");
+        assert_eq!(result, "<ul><li>hello</li>  -</ul>");
+    }
 }
