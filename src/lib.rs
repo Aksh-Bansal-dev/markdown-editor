@@ -56,7 +56,7 @@ mod tests {
     #[test]
     fn it_parses_nested_list() {
         let result = parse("- hello\n  - bye");
-        assert_eq!(result, "<ul><li>hello</li><ul><li>bye</li></ul></ul>");
+        assert_eq!(result, "<ul><li>hello<ul><li>bye</li></ul></li></ul>");
     }
 
     #[test]
@@ -68,6 +68,12 @@ mod tests {
     #[test]
     fn it_parses_nested_list_2() {
         let result = parse("- hello\n  - bye\n- go");
-        assert_eq!(result, "<ul><li>hello</li><ul><li>bye</li></ul><li>go</li></ul>");
+        assert_eq!(result, "<ul><li>hello<ul><li>bye</li></ul></li><li>go</li></ul>");
+    }
+
+    #[test]
+    fn it_parses_nested_list_with_incomplete_list() {
+        let result = parse("- hello\n  -");
+        assert_eq!(result, "<ul><li>hello</li>  -</ul>");
     }
 }

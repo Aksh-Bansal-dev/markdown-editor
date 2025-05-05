@@ -98,10 +98,10 @@ impl Parser {
                 spaces += 1;
             }
 
-            if self.pos + spaces + 1 > self.input.len()
+            if self.pos + spaces >= self.input.len()
                 || self.input.chars().nth(self.pos + spaces).unwrap() != '-'
             {
-                break;
+                res.push_str(self.parse_text(false).as_str())
             } else if spaces / 2 == dep
                 && self.pos + spaces + 2 <= self.input.len()
                 && self.input[spaces + self.pos..spaces + self.pos + 2] == String::from("- ")
@@ -117,8 +117,18 @@ impl Parser {
                 let text = self.parse_text(false);
                 res.push_str(&create_html_element("li".to_string(), text));
             } else if spaces / 2 > dep {
-                res.push_str(self.parse_list(dep + 1).as_str());
-            } else if self.next_char() == '-' && dep == 0 {
+                let child_html = self.parse_list(dep + 1);
+                let mut close_li_tag = false;
+                if res.ends_with("</li>") && child_html.starts_with("<ul>") {
+                    res.truncate(res.len() - 5);
+                    close_li_tag = true;
+                }
+                res.push_str(child_html.as_str());
+                if close_li_tag {
+                    res.push_str("</li>");
+                }
+            } else if self.input.chars().nth(self.pos + spaces).unwrap() == '-' && spaces / 2 == dep
+            {
                 res.push_str(self.parse_text(false).as_str())
             } else {
                 break;
