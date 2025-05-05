@@ -103,6 +103,7 @@ impl Parser {
             {
                 break;
             } else if spaces / 2 == dep
+                && self.pos + spaces + 2 <= self.input.len()
                 && self.input[spaces + self.pos..spaces + self.pos + 2] == String::from("- ")
             {
                 if !list_initialized {
