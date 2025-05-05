@@ -31,16 +31,7 @@ impl Parser {
     fn parse_line(&mut self) -> String {
         match self.next_char() {
             '#' => self.parse_title(),
-            '-' => {
-                if self.pos + 1 < self.input.len()
-                    && (self.input.chars().nth(self.pos + 1).unwrap() == ' '
-                        || self.input.chars().nth(self.pos + 1).unwrap() == '\t')
-                {
-                    self.parse_list()
-                } else {
-                    self.parse_text(false)
-                }
-            }
+            '-' => self.parse_list(0),
             '\n' => self.parse_newline(),
             _ => self.parse_text(false),
         }
@@ -96,50 +87,49 @@ impl Parser {
         create_html_element("p".to_string(), "".to_string())
     }
 
-    fn parse_list(&mut self) -> String {
+    fn parse_list(&mut self, dep: usize) -> String {
         let mut res = String::new();
-        res.push_str("<ul>");
-        loop {
-            let mut dep = 0;
-            while !self.end_of_line() && (self.next_char() == ' ' || self.next_char() == '\t') {
-                dep += 1;
-                self.consume_char();
-            }
-            dep /= 2;
-
-            if self.pos < self.input.len() - 1
-                && self.next_char() == '-'
-                && (self.input.chars().nth(self.pos + 1).unwrap() == ' '
-                    || self.input.chars().nth(self.pos + 1).unwrap() == '\t')
+        let mut list_initialized = false;
+        while !self.end_of_line() {
+            let mut spaces: usize = 0;
+            while self.pos + spaces < self.input.len()
+                && self.input.chars().nth(self.pos + spaces).unwrap() == ' '
             {
-                for _ in 0..dep {
+                spaces += 1;
+            }
+
+            if self.pos + spaces + 1 > self.input.len()
+                || self.input.chars().nth(self.pos + spaces).unwrap() != '-'
+            {
+                break;
+            } else if spaces / 2 == dep
+                && self.input[spaces + self.pos..spaces + self.pos + 2] == String::from("- ")
+            {
+                if !list_initialized {
                     res.push_str("<ul>");
+                    list_initialized = true;
                 }
+                self.consume_whitespace();
                 self.consume_char();
                 self.consume_whitespace();
 
                 let text = self.parse_text(false);
                 res.push_str(&create_html_element("li".to_string(), text));
-
-                for _ in 0..dep {
-                    res.push_str("</ul>");
-                }
+            } else if spaces / 2 > dep {
+                res.push_str(self.parse_list(dep + 1).as_str());
+            } else if self.next_char() == '-' && dep == 0 {
+                res.push_str(self.parse_text(false).as_str())
             } else {
                 break;
             }
-
-            if self.next_char() != '\n'
-                || self.pos >= self.input.len() - 1
-                || (self.input.chars().nth(self.pos + 1).unwrap() != '-'
-                    && self.input.chars().nth(self.pos + 1).unwrap() != '\t'
-                    && self.input.chars().nth(self.pos + 1).unwrap() != ' ')
-            {
-                break;
+            if self.next_char() == '\n' {
+                self.consume_char();
             }
-            self.consume_char(); // \n
         }
 
-        res.push_str("</ul>");
+        if list_initialized {
+            res.push_str("</ul>");
+        }
         res
     }
 
